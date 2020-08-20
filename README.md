@@ -6,4 +6,4 @@ https://github.com/Gokay9U/FalconBMS_AircraftPrincipalAxes/blob/master/TryingToC
 And then run 
 https://github.com/Gokay9U/FalconBMS_AircraftPrincipalAxes/releases/download/v0.1/netSocket.exe
 It'll connect by itself.
-https://github.com/Gokay9U/FalconBMS_AircraftPrincipalAxes/blob/master/Connected.png
+https://raw.githubusercontent.com/Gokay9U/FalconBMS_AircraftPrincipalAxes/master/Connected.png
