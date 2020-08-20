@@ -1,0 +1,170 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--External Libraries!-->
+<script type="text/javascript" src="./GLEAT/js/gl-matrix-min.js"></script>
+<script type="text/javascript" src="./GLEAT/js/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="./GLEAT/js/webgl-utils.js"></script>
+<script type="text/javascript" src="./GLEAT/js/webgl-debug.js"></script>
+<script type="text/javascript" src="./GLEAT/js/numeric-1.2.6.min.js"></script>
+<script type="text/javascript" src="./GLEAT/js/jquery-1.11.1.min.js"></script>
+
+<!--Our Scripts!-->
+<script type="text/javascript" src="./GLEAT\Geometry/PolyMesh.js"></script>
+<script type="text/javascript" src="./GLEAT\Geometry/Primitives3D.js"></script>
+<script type="text/javascript" src="./GLEAT\Geometry/Cameras3D.js"></script>
+<script type="text/javascript" src="./GLEAT/Viewers/Shaders.js"></script>
+<script type="text/javascript" src="./GLEAT/Viewers/SimpleMeshCanvas.js"></script>
+<script type="text/javascript" src="./EulerAngles.js"></script>
+</head>
+
+<body>
+
+    <table><tr><td>
+        <table border = "1" cellpadding = "5">
+        <tr><td colspan = "4">
+        <canvas id="MainGLCanvas" style="border: none;" width="650" height="600"></canvas>
+        </td></tr>
+        <tr><td bgcolor = "black"><font color = "#00FF00"><b>Yaw</b></font></td>
+        <td><input type="text" id="yawTxt" size="1"></input></td><td><button type="button" id = "yawButton" onclick="callYawSet()">SET</button></td></tr>
+        
+        <tr><td bgcolor = "black"><font color = "cyan"><b>Pitch</b></font></td>
+        <td><input type="text" id="pitchTxt" size="1"></input></td><td><button type="button" id = "pitchButton" onclick="callPitchSet()">SET</button></td></tr>
+        
+        
+        <tr><td bgcolor = "black"><font color = "red"><b>Roll</b></font></td>
+        <td><input type="text" id="rollTxt" size="1"></input></td><td><button type="button" id = "rollButton" onclick="callRollSet()">SET</button></td></tr>
+        </table>
+        </td>
+
+        <td>
+        <table>
+        <tr><td>Display Gimbals</td><td><input type="checkbox" id="displayGimbalsCheckbox"/></td></tr>
+        <p id='Status'></p>
+        </table>
+        </td></tr></table>
+            
+        
+        
+
+<script>
+    var btnConnect = document.getElementById("btnConnect");
+    var btnDisconnect=document.getElementById("btnDisconnect");
+  
+    var ConnectCheck = false;
+
+    var timer = setInterval(
+        ()=>{
+            if(!ConnectCheck){
+                var socket = new WebSocket("ws://localhost:5556/9U");;
+                socket.onopen = function (e) {
+                console.log("Connected",e);
+                ConnectCheck = true;
+                document.getElementById("Status").innerHTML= "Connected to FalconBMS";
+            };
+    socket.onclose = function (e) {
+        ConnectCheck = false;
+        console.log("Disconnected",e);
+    };
+    socket.onerror = function(e){
+        console.error(e.data);
+    };
+           
+    socket.onmessage = function (e) {
+                if(e.data.includes("Pitch:")){
+                    var number = parseFloat(e.data.replace("Pitch:","").replace(",","."));
+                    //pitchTxt = e.data.substr(6,e.data.length-6);
+                    pitchTxt.value = number.toFixed(10);
+                    console.log("P"+number);
+                    callPitchSet();
+                }
+                if(e.data.includes("Roll:")){
+                    var number = parseFloat(e.data.replace("Roll:","").replace(",","."));
+                    
+                    rollTxt.value = number.toFixed(10);
+                    console.log("R"+number);
+                    callRollSet();
+                }
+                if(e.data.includes("Yaw:")){
+                    var number = parseFloat(e.data.replace("Yaw:","").replace(",","."));
+
+                    yawTxt.value = number.toFixed(10);;
+                    console.log("Y"+number);
+                    callYawSet();
+                }
+            };
+            if (!socket || socket.readyState != WebSocket.OPEN) {
+                console.error("WebSocket not connected yet. Trying again in 3 sec.");
+                var s = 3;
+                var counter = 0;
+                setInterval(() => {
+                    if(ConnectCheck == false){
+                    document.getElementById("Status").innerHTML = "WebSocket is not connected. Trying again in " + s +" sec.";
+                    s--;
+                    counter++;
+                    while(counter>=3){
+                        clearInterval();
+                        counter=0;
+                        s = 3;
+                    }
+                }
+                }, 1000);
+            }
+          }
+        },3000
+    );
+  
+    
+
+    var pitchTxt = document.getElementById('pitchTxt');
+    var rollTxt = document.getElementById('rollTxt');
+    var yawTxt = document.getElementById('yawTxt');
+
+
+    
+	$('body').on('contextmenu', '#MainGLCanvas', function(e){ return false; }); //Need this to disable the menu that pops up on right clicking while rotate
+	var glcanvas = document.getElementById("MainGLCanvas");
+	GimbalCanvas(glcanvas);//Add fields to glcanvas that help with rendering
+	glcanvas.mesh.loadFile("Block52+.off");
+	glcanvas.initGimbals();
+	
+	//Gimbals displaying
+	var displayGimbalsCheckbox = document.getElementById('displayGimbalsCheckbox');
+    displayGimbalsCheckbox.addEventListener('change', function(e) {
+        glcanvas.displayGimbals = displayGimbalsCheckbox.checked;
+        requestAnimFrame(glcanvas.repaint);
+    });
+    displayGimbalsCheckbox.checked = true;
+	
+	//Yaw setting
+    function callYawSet() {
+        glcanvas.yawAngle = yawTxt.value;
+        requestAnimFrame(glcanvas.repaint);
+    }
+    
+    //Pitch setting
+    function callPitchSet() {
+        glcanvas.pitchAngle = pitchTxt.value;
+        requestAnimFrame(glcanvas.repaint);
+    }
+    
+    //Roll setting
+    function callRollSet() {
+        glcanvas.rollAngle = rollTxt.value;
+        requestAnimFrame(glcanvas.repaint);
+    }
+    requestAnimFrame(glcanvas.repaint);
+    //initial values to the textboxes
+    yawTxt.value = "0";
+    callYawSet();
+    pitchTxt.value = "0";
+    callPitchSet();
+    rollTxt.value = "0";
+    callRollSet();
+    
+</script>
+
+
+</body>
+</html>
